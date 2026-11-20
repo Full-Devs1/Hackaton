@@ -1,7 +1,7 @@
 'use strict';
 
-// Cambia esta URL cuando el backend en Python este levantado
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = 'http://127.0.0.1:8000';
+const STORAGE_KEY = 'ecoconecta_sesion';
 
 const $ = (id) => document.getElementById(id);
 const loginTab = $('login-tab');
@@ -44,11 +44,17 @@ function toast(message) {
   toast.timer = setTimeout(() => el.classList.remove('show'), 3600);
 }
 
-// Helper listo para conectar con el backend en Python cuando tengan la ruta
-async function enviarAuth(endpoint, payload) {
-  if (!API_BASE_URL) {
-    return { simulated: true, endpoint, payload };
+function guardarSesion(data, persistente = true) {
+  const payload = JSON.stringify(data);
+  sessionStorage.setItem(STORAGE_KEY, payload);
+  if (persistente) {
+    localStorage.setItem(STORAGE_KEY, payload);
+  } else {
+    localStorage.removeItem(STORAGE_KEY);
   }
+}
+
+async function enviarAuth(endpoint, payload) {
   const res = await fetch(`${API_BASE_URL}${endpoint}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -56,7 +62,7 @@ async function enviarAuth(endpoint, payload) {
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new Error(data.detail || data.message || 'Error de autenticación.');
+    throw new Error(data.detail || data.message || 'No se pudo completar la operación.');
   }
   return data;
 }
@@ -91,15 +97,18 @@ $('login-panel').addEventListener('submit', async (event) => {
   event.preventDefault();
   const email = $('login-email').value.trim();
   const password = $('login-password').value;
+  const recordar = $('remember')?.checked ?? false;
 
   let ok = setError('login-email', emailValid(email) ? '' : 'Escribe un correo electrónico válido.');
   ok = setError('login-password', password.length >= 8 ? '' : 'La contraseña debe tener al menos 8 caracteres.') && ok;
   if (!ok) return;
 
   try {
-    const res = await enviarAuth('/api/auth/login', { email, password });
-    toast(res.simulated ? 'Validación correcta. Listo para conectar con el backend.' : 'Sesión iniciada.');
+    const data = await enviarAuth('/api/auth/login', { email, password });
+    guardarSesion({ ...data, tipo_acceso: 'usuario' }, recordar);
+    toast(`Bienvenido, ${data.usuario?.nombre || 'usuario'}.`);
   } catch (err) {
+    setError('login-password', err.message);
     toast(err.message);
   }
 });
@@ -123,9 +132,11 @@ $('register-panel').addEventListener('submit', async (event) => {
   if (!ok) return;
 
   try {
-    const res = await enviarAuth('/api/auth/register', { nombre, email, telefono, password });
-    toast(res.simulated ? 'Registro validado. Listo para conectar con el backend.' : 'Cuenta creada.');
+    const data = await enviarAuth('/api/auth/register', { nombre, email, telefono, password });
+    guardarSesion({ ...data, tipo_acceso: 'usuario' }, true);
+    toast(`Cuenta creada para ${data.usuario?.nombre || nombre}.`);
   } catch (err) {
+    setError('reg-email', err.message);
     toast(err.message);
   }
 });
@@ -140,9 +151,11 @@ $('admin-form').addEventListener('submit', async (event) => {
   if (!ok) return;
 
   try {
-    const res = await enviarAuth('/api/auth/admin/login', { email, password });
-    toast(res.simulated ? 'Acceso admin validado. Listo para conectar con el backend.' : 'Ingreso administrativo exitoso.');
+    const data = await enviarAuth('/api/auth/admin/login', { email, password });
+    guardarSesion({ ...data, tipo_acceso: 'administrador' }, false);
+    toast(`Sesión administrativa iniciada: ${data.administrador?.nombre || 'Admin'}.`);
   } catch (err) {
+    setError('admin-password', err.message);
     toast(err.message);
   }
 });
