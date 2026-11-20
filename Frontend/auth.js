@@ -7,51 +7,47 @@ const $ = (id) => document.getElementById(id);
 const loginTab = $('login-tab');
 const registerTab = $('register-tab');
 
-function showUserForm(which) {
-  const isLogin = which === 'login';
-  loginTab.classList.toggle('active', isLogin);
-  registerTab.classList.toggle('active', !isLogin);
-  loginTab.setAttribute('aria-selected', String(isLogin));
-  registerTab.setAttribute('aria-selected', String(!isLogin));
-  $('login-panel').hidden = !isLogin;
-  $('register-panel').hidden = isLogin;
+function switchTab(tab) {
+  const login = tab === 'login';
+  loginTab.classList.toggle('active', login);
+  registerTab.classList.toggle('active', !login);
+  loginTab.setAttribute('aria-selected', String(login));
+  registerTab.setAttribute('aria-selected', String(!login));
+  $('login-form').hidden = !login;
+  $('register-form').hidden = login;
 }
 
 function showAdmin(show) {
-  $('user-view').hidden = show;
+  $('citizen-view').hidden = show;
   $('admin-view').hidden = !show;
-  history.replaceState(null, '', show ? '#administrador' : '#acceso');
+  history.replaceState(null, '', show ? '#administrador' : '#inicio');
   if (show) $('admin-email').focus({ preventScroll: true });
 }
 
-function setError(id, message = '') {
-  const input = $(id);
-  if (input) input.classList.toggle('invalid', Boolean(message));
-  const target = $(`${id}-error`);
-  if (target) target.textContent = message;
-  return !message;
-}
-
-function emailValid(value) {
+function emailIsValid(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value);
 }
 
-function toast(message) {
-  const el = $('toast');
-  el.textContent = message;
-  el.classList.add('show');
-  clearTimeout(toast.timer);
-  toast.timer = setTimeout(() => el.classList.remove('show'), 3600);
+function setError(id, message = '') {
+  const field = $(id);
+  if (field) field.classList.toggle('invalid', Boolean(message));
+  const output = $(`${id}-error`);
+  if (output) output.textContent = message;
+  return !message;
 }
 
-function guardarSesion(data, persistente = true) {
+function notify(message) {
+  const toast = $('toast');
+  toast.textContent = message;
+  toast.classList.add('show');
+  clearTimeout(notify.timer);
+  notify.timer = setTimeout(() => toast.classList.remove('show'), 4200);
+}
+
+function guardarSesion(data) {
   const payload = JSON.stringify(data);
   sessionStorage.setItem(STORAGE_KEY, payload);
-  if (persistente) {
-    localStorage.setItem(STORAGE_KEY, payload);
-  } else {
-    localStorage.removeItem(STORAGE_KEY);
-  }
+  localStorage.setItem(STORAGE_KEY, payload);
 }
 
 async function enviarAuth(endpoint, payload) {
@@ -67,10 +63,10 @@ async function enviarAuth(endpoint, payload) {
   return data;
 }
 
-loginTab.addEventListener('click', () => showUserForm('login'));
-registerTab.addEventListener('click', () => showUserForm('register'));
-$('go-register').addEventListener('click', () => showUserForm('register'));
-$('go-login').addEventListener('click', () => showUserForm('login'));
+loginTab.addEventListener('click', () => switchTab('login'));
+registerTab.addEventListener('click', () => switchTab('register'));
+$('go-register').addEventListener('click', () => switchTab('register'));
+$('go-login').addEventListener('click', () => switchTab('login'));
 $('admin-link').addEventListener('click', (event) => {
   event.preventDefault();
   showAdmin(true);
@@ -80,64 +76,76 @@ $('back-user').addEventListener('click', () => showAdmin(false));
 document.querySelectorAll('[data-toggle]').forEach((button) => {
   button.addEventListener('click', () => {
     const input = $(button.dataset.toggle);
-    const visible = input.type === 'password';
-    input.type = visible ? 'text' : 'password';
-    button.textContent = visible ? 'Ocultar' : 'Mostrar';
-    button.setAttribute('aria-label', visible ? 'Ocultar contraseña' : 'Mostrar contraseña');
+    const show = input.type === 'password';
+    input.type = show ? 'text' : 'password';
+    document
+      .querySelectorAll(`[data-toggle="${button.dataset.toggle}"]`)
+      .forEach((peer) => {
+        peer.textContent = show ? 'Ocultar' : 'Mostrar';
+      });
   });
 });
 
-document.querySelectorAll('.field input').forEach((input) => {
-  input.addEventListener('input', () => {
-    if (input.id && $(`${input.id}-error`)) setError(input.id, '');
+document.querySelectorAll('input, select').forEach((field) => {
+  field.addEventListener('input', () => {
+    if ($(`${field.id}-error`)) setError(field.id, '');
+  });
+  field.addEventListener('change', () => {
+    if ($(`${field.id}-error`)) setError(field.id, '');
   });
 });
 
-$('login-panel').addEventListener('submit', async (event) => {
+$('login-form').addEventListener('submit', async (event) => {
   event.preventDefault();
   const email = $('login-email').value.trim();
   const password = $('login-password').value;
-  const recordar = $('remember')?.checked ?? false;
 
-  let ok = setError('login-email', emailValid(email) ? '' : 'Escribe un correo electrónico válido.');
-  ok = setError('login-password', password.length >= 8 ? '' : 'La contraseña debe tener al menos 8 caracteres.') && ok;
-  if (!ok) return;
+  let valid = setError('login-email', emailIsValid(email) ? '' : 'Escribe un correo electrónico válido.');
+  valid = setError('login-password', password.length >= 8 ? '' : 'La contraseña debe tener al menos 8 caracteres.') && valid;
+  if (!valid) return;
 
   try {
     const data = await enviarAuth('/api/auth/login', { email, password });
-    guardarSesion({ ...data, tipo_acceso: 'usuario' }, recordar);
-    toast(`Bienvenido, ${data.usuario?.nombre || 'usuario'}.`);
+    guardarSesion({ ...data, tipo_acceso: 'usuario' });
+    notify(`Bienvenido, ${data.usuario?.nombre || 'usuario'}.`);
   } catch (err) {
     setError('login-password', err.message);
-    toast(err.message);
+    notify(err.message);
   }
 });
 
-$('register-panel').addEventListener('submit', async (event) => {
+$('register-form').addEventListener('submit', async (event) => {
   event.preventDefault();
-  const nombre = $('reg-name').value.trim();
+  const name = $('reg-name').value.trim();
   const email = $('reg-email').value.trim();
-  const telefono = $('reg-phone').value.trim();
+  const phone = $('reg-phone').value.trim();
+  const profile = $('reg-profile').value;
   const password = $('reg-password').value;
   const confirm = $('reg-confirm').value;
-  const acepto = $('terms').checked;
 
-  let ok = setError('reg-name', nombre.length >= 3 ? '' : 'Escribe tu nombre completo.');
-  ok = setError('reg-email', emailValid(email) ? '' : 'Escribe un correo válido.') && ok;
-  ok = setError('reg-phone', telefono.replace(/\D/g, '').length >= 7 ? '' : 'Escribe un número de celular válido.') && ok;
-  ok = setError('reg-password', password.length >= 8 ? '' : 'Usa al menos 8 caracteres.') && ok;
-  ok = setError('reg-confirm', confirm && confirm === password ? '' : 'Las contraseñas no coinciden.') && ok;
-  $('terms-error').textContent = acepto ? '' : 'Debes aceptar el tratamiento de datos para continuar.';
-  ok = acepto && ok;
-  if (!ok) return;
+  let valid = setError('reg-name', name.length >= 3 ? '' : 'Escribe tu nombre completo.');
+  valid = setError('reg-email', emailIsValid(email) ? '' : 'Escribe un correo electrónico válido.') && valid;
+  valid = setError('reg-phone', phone.replace(/\D/g, '').length >= 7 ? '' : 'Escribe un número de celular válido.') && valid;
+  valid = setError('reg-profile', profile ? '' : 'Selecciona cómo participas en la comunidad.') && valid;
+  valid = setError('reg-password', password.length >= 8 ? '' : 'La contraseña debe tener al menos 8 caracteres.') && valid;
+  valid = setError('reg-confirm', confirm && confirm === password ? '' : 'Las contraseñas no coinciden.') && valid;
+  $('terms-error').textContent = $('terms').checked ? '' : 'Debes aceptar el tratamiento de datos para continuar.';
+  valid = $('terms').checked && valid;
+  if (!valid) return;
 
   try {
-    const data = await enviarAuth('/api/auth/register', { nombre, email, telefono, password });
-    guardarSesion({ ...data, tipo_acceso: 'usuario' }, true);
-    toast(`Cuenta creada para ${data.usuario?.nombre || nombre}.`);
+    const data = await enviarAuth('/api/auth/register', {
+      nombre: name,
+      email,
+      telefono: phone,
+      perfil: profile,
+      password,
+    });
+    guardarSesion({ ...data, tipo_acceso: 'usuario' });
+    notify(`Cuenta creada para ${data.usuario?.nombre || name}.`);
   } catch (err) {
     setError('reg-email', err.message);
-    toast(err.message);
+    notify(err.message);
   }
 });
 
@@ -146,22 +154,18 @@ $('admin-form').addEventListener('submit', async (event) => {
   const email = $('admin-email').value.trim();
   const password = $('admin-password').value;
 
-  let ok = setError('admin-email', emailValid(email) ? '' : 'Escribe un correo válido.');
-  ok = setError('admin-password', password.length >= 8 ? '' : 'Ingresa una contraseña de al menos 8 caracteres.') && ok;
-  if (!ok) return;
+  let valid = setError('admin-email', emailIsValid(email) ? '' : 'Escribe un correo administrativo válido.');
+  valid = setError('admin-password', password.length >= 8 ? '' : 'Ingresa una contraseña válida.') && valid;
+  if (!valid) return;
 
   try {
     const data = await enviarAuth('/api/auth/admin/login', { email, password });
-    guardarSesion({ ...data, tipo_acceso: 'administrador' }, false);
-    toast(`Sesión administrativa iniciada: ${data.administrador?.nombre || 'Admin'}.`);
+    guardarSesion({ ...data, tipo_acceso: 'administrador' });
+    notify(`Sesión administrativa iniciada: ${data.administrador?.nombre || 'Admin'}.`);
   } catch (err) {
     setError('admin-password', err.message);
-    toast(err.message);
+    notify(err.message);
   }
-});
-
-$('forgot-link').addEventListener('click', () => {
-  toast('La recuperación de contraseña se habilitará al conectar el servicio de correo.');
 });
 
 if (location.hash === '#administrador') showAdmin(true);
