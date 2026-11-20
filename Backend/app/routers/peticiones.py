@@ -16,11 +16,11 @@ def crear_peticion(data: PeticionCreate, db: Session = Depends(get_db)):
         id_usuario=data.id_usuario,
         etiqueta=data.etiqueta.strip(),
         direccion=data.direccion.strip(),
+        estado="pendiente",
     )
     db.add(pet)
     db.flush()
 
-    # Solo se almacena la URL de la imagen (alojada externamente / Storage)
     if data.url_imagen and data.url_imagen.strip():
         db.add(Imagen(id_peticion=pet.id_peticion, url_imagen=data.url_imagen.strip()))
 
@@ -31,16 +31,19 @@ def crear_peticion(data: PeticionCreate, db: Session = Depends(get_db)):
         "id_usuario": pet.id_usuario,
         "etiqueta": pet.etiqueta,
         "direccion": pet.direccion,
+        "estado": pet.estado,
         "fecha_creacion": pet.fecha_creacion,
         "imagenes": [img.url_imagen for img in pet.imagenes],
     }
 
 
 @router.get("")
-def listar_peticiones(etiqueta: str | None = None, db: Session = Depends(get_db)):
+def listar_peticiones(etiqueta: str | None = None, estado: str | None = None, db: Session = Depends(get_db)):
     query = db.query(Peticion)
     if etiqueta:
         query = query.filter(Peticion.etiqueta == etiqueta)
+    if estado:
+        query = query.filter(Peticion.estado == estado)
     items = query.order_by(Peticion.fecha_creacion.desc()).all()
     return [
         {
@@ -48,8 +51,9 @@ def listar_peticiones(etiqueta: str | None = None, db: Session = Depends(get_db)
             "id_usuario": p.id_usuario,
             "etiqueta": p.etiqueta,
             "direccion": p.direccion,
+            "estado": p.estado,
             "fecha_creacion": p.fecha_creacion,
-            "completada": p.completado is not None,
+            "completada": p.estado == "completada" or p.completado is not None,
             "imagenes": [img.url_imagen for img in p.imagenes],
         }
         for p in items
@@ -61,7 +65,7 @@ def completar_peticion(id_peticion: int, data: CompletarIn, db: Session = Depend
     pet = db.query(Peticion).filter(Peticion.id_peticion == id_peticion).first()
     if not pet:
         raise HTTPException(status_code=404, detail="Petición no encontrada.")
-    if pet.completado is not None:
+    if pet.completado is not None or pet.estado == "completada":
         raise HTTPException(status_code=400, detail="Esta petición ya fue completada.")
     if not db.query(Administrador).filter(Administrador.id_administrador == data.id_administrador).first():
         raise HTTPException(status_code=404, detail="Administrador no encontrado.")
@@ -77,12 +81,15 @@ def completar_peticion(id_peticion: int, data: CompletarIn, db: Session = Depend
     db.add(cierre)
     db.commit()
 
-    # El trigger trg_after_pet_completado en PostgreSQL suma los puntos automáticamente
+    # El trigger trg_after_pet_completado actualiza peticiones.estado y suma los 10 puntos
+    db.expire_all()
+    pet_actualizada = db.query(Peticion).filter(Peticion.id_peticion == id_peticion).first()
     reg_puntos = db.query(PuntosUsu).filter(PuntosUsu.id_usuario == pet.id_usuario).first()
     puntos_actuales = reg_puntos.puntos if reg_puntos else 0
 
     return {
         "id_peticion": pet.id_peticion,
+        "estado": pet_actualizada.estado if pet_actualizada else "completada",
         "completada": True,
         "peso": data.peso,
         "puntos_totales_usuario": puntos_actuales,

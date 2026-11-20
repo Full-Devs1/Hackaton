@@ -9,8 +9,9 @@ class Usuario(Base):
 
     id_usuario = Column(Integer, primary_key=True, index=True)
     correo = Column(String(150), unique=True, nullable=False, index=True)
-    nombre = Column(String(100), nullable=False)
+    nombre = Column(String(120), nullable=False)
     contrasena = Column(String(255), nullable=True)
+    fecha_registro = Column(DateTime(timezone=True), server_default=func.now())
 
     puntos = relationship("PuntosUsu", back_populates="usuario", uselist=False)
     peticiones = relationship("Peticion", back_populates="usuario")
@@ -21,6 +22,7 @@ class PuntosUsu(Base):
 
     id_usuario = Column(Integer, ForeignKey("usuario.id_usuario", ondelete="CASCADE"), primary_key=True)
     puntos = Column(Integer, nullable=False, default=0)
+    ultima_actualizacion = Column(DateTime(timezone=True), server_default=func.now())
 
     usuario = relationship("Usuario", back_populates="puntos")
 
@@ -30,17 +32,20 @@ class Administrador(Base):
 
     id_administrador = Column(Integer, primary_key=True, index=True)
     correo = Column(String(150), unique=True, nullable=False, index=True)
-    nombre = Column(String(100), nullable=False)
-    tipo = Column(String(50), nullable=True)
+    nombre = Column(String(120), nullable=False)
+    tipo = Column(String(30), nullable=False)  # 'reciclador' | 'huertero'
     contrasena = Column(String(255), nullable=True)
+    fecha_registro = Column(DateTime(timezone=True), server_default=func.now())
 
 
 class Recolector(Base):
     __tablename__ = "recolectores"
 
     id_recolector = Column(Integer, primary_key=True, index=True)
-    nombre = Column(String(100), nullable=False)
-    tipo = Column(String(50), nullable=True)
+    nombre = Column(String(120), nullable=False)
+    tipo = Column(String(30), nullable=False)  # 'reciclador' | 'huertero'
+    telefono = Column(String(20), nullable=True)
+    fecha_registro = Column(DateTime(timezone=True), server_default=func.now())
 
 
 class Peticion(Base):
@@ -49,7 +54,8 @@ class Peticion(Base):
     id_peticion = Column(Integer, primary_key=True, index=True)
     id_usuario = Column(Integer, ForeignKey("usuario.id_usuario", ondelete="CASCADE"), nullable=False)
     etiqueta = Column(String(100), nullable=False)
-    direccion = Column(String(255), nullable=False)
+    direccion = Column(Text, nullable=False)
+    estado = Column(String(30), nullable=False, default="pendiente")
     fecha_creacion = Column(DateTime(timezone=True), server_default=func.now())
 
     usuario = relationship("Usuario", back_populates="peticiones")
@@ -63,6 +69,7 @@ class Imagen(Base):
     id_imagen = Column(Integer, primary_key=True, index=True)
     id_peticion = Column(Integer, ForeignKey("peticiones.id_peticion", ondelete="CASCADE"), nullable=False)
     url_imagen = Column(Text, nullable=False)
+    fecha_subida = Column(DateTime(timezone=True), server_default=func.now())
 
     peticion = relationship("Peticion", back_populates="imagenes")
 
@@ -70,9 +77,10 @@ class Imagen(Base):
 class PetCompletado(Base):
     __tablename__ = "pet_completado"
 
-    id_peticion = Column(Integer, ForeignKey("peticiones.id_peticion", ondelete="CASCADE"), primary_key=True)
-    id_administrador = Column(Integer, ForeignKey("administradores.id_administrador"), nullable=False)
-    id_recolector = Column(Integer, ForeignKey("recolectores.id_recolector"), nullable=False)
+    id_completado = Column(Integer, primary_key=True, index=True)
+    id_peticion = Column(Integer, ForeignKey("peticiones.id_peticion", ondelete="CASCADE"), unique=True, nullable=False)
+    id_administrador = Column(Integer, ForeignKey("administradores.id_administrador", ondelete="RESTRICT"), nullable=False)
+    id_recolector = Column(Integer, ForeignKey("recolectores.id_recolector", ondelete="RESTRICT"), nullable=False)
     peso = Column(Numeric(10, 2), nullable=True)
     fecha_completado = Column(DateTime(timezone=True), server_default=func.now())
 
