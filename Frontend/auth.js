@@ -158,11 +158,14 @@ $('admin-form').addEventListener('submit', async (event) => {
   valid = setError('admin-password', password.length >= 8 ? '' : 'Ingresa una contraseña válida.') && valid;
   if (!valid) return;
 
-  try {
+  try{
     const data = await enviarAuth('/api/auth/admin/login', { email, password });
     guardarSesion({ ...data, tipo_acceso: 'administrador' });
     notify(`Sesión administrativa iniciada: ${data.administrador?.nombre || 'Admin'}.`);
-  } catch (err) {
+    setTimeout(() => {
+      window.location.href = 'admin.html';
+    }, 650);
+  }catch (err) {
     setError('admin-password', err.message);
     notify(err.message);
   }

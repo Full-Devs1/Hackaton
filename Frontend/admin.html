@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#063B2E">
+  <title>EcoConecta Villas de San Pablo | Panel Administrativo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="admin.html" aria-label="EcoConecta Villas de San Pablo">
+        <img src="logo-ecoconecta-original.jpg" alt="EcoConecta Villas de San Pablo">
+      </a>
+
+      <div class="topbar-actions">
+        <span class="role-badge" id="admin-role-badge" aria-live="polite">Cargando rol...</span>
+        <button class="btn-outline-light" type="button" id="logout-btn">Cerrar sesión</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="dashboard">
+    <!-- Encabezado de identidad del administrador -->
+    <section class="hero-card" aria-labelledby="admin-greeting">
+      <div class="hero-copy">
+        <span class="kicker">GESTIÓN COMUNITARIA · VILLAS DE SAN PABLO</span>
+        <h1 id="admin-greeting">Hola, Administrador</h1>
+        <p id="admin-role-description">Consulta las solicitudes asignadas a tu área y gestiona tu equipo de recolección.</p>
+      </div>
+
+      <div class="hero-controls">
+        <button class="btn-primary" type="button" id="btn-ver-peticiones" aria-expanded="false" aria-controls="peticiones-section">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>
+          <span id="btn-peticiones-label">Ver peticiones</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Bloque desplegable: Peticiones filtradas por tipo de administrador -->
+    <section class="panel-card" id="peticiones-section" hidden aria-labelledby="peticiones-title">
+      <div class="panel-header">
+        <div>
+          <span class="section-tag" id="peticiones-filter-tag">FILTRO ACTIVO</span>
+          <h2 id="peticiones-title">Peticiones asignadas a tu área</h2>
+        </div>
+
+        <div class="filter-bar" role="group" aria-label="Filtrar peticiones por estado">
+          <button class="chip-btn active" type="button" data-estado="">Todas</button>
+          <button class="chip-btn" type="button" data-estado="pendiente">Pendientes</button>
+          <button class="chip-btn" type="button" data-estado="completada">Completadas</button>
+          <button class="btn-secondary btn-sm" type="button" id="btn-refrescar-peticiones">Actualizar</button>
+        </div>
+      </div>
+
+      <div id="peticiones-feedback" class="empty-state" hidden></div>
+      <div id="peticiones-list" class="peticiones-grid"></div>
+    </section>
+
+    <!-- Bloque: Recolectores a cargo + Formulario para añadir -->
+    <section class="team-layout" aria-labelledby="recolectores-title">
+      <article class="panel-card">
+        <div class="panel-header">
+          <div>
+            <span class="section-tag">EQUIPO OPERATIVO</span>
+            <h2 id="recolectores-title">Recolectores a tu cargo</h2>
+          </div>
+          <span class="count-pill" id="recolectores-count">0 registrados</span>
+        </div>
+
+        <div id="recolectores-empty" class="empty-state" hidden>
+          Aún no tienes recolectores registrados en tu área. Usa el formulario para agregar el primero.
+        </div>
+
+        <ul class="recolectores-list" id="recolectores-list"></ul>
+      </article>
+
+      <aside class="panel-card form-card" aria-labelledby="nuevo-recolector-title">
+        <span class="section-tag">NUEVO INTEGRANTE</span>
+        <h2 id="nuevo-recolector-title">Añadir recolector</h2>
+        <p class="helper-copy" id="auto-role-note">
+          Se registrará automáticamente dentro de tu misma categoría operativa.
+        </p>
+
+        <form id="recolector-form" class="stack-form" novalidate>
+          <div class="field">
+            <label for="rec-nombre">Nombre completo del recolector</label>
+            <input id="rec-nombre" name="nombre" type="text" placeholder="Ej. Carlos Mendoza" maxlength="120" required>
+            <small class="error" id="rec-nombre-error" aria-live="polite"></small>
+          </div>
+
+          <div class="field">
+            <label for="rec-telefono">Número de celular</label>
+            <input id="rec-telefono" name="telefono" type="tel" inputmode="tel" placeholder="300 123 4567" maxlength="20" required>
+            <small class="error" id="rec-telefono-error" aria-live="polite"></small>
+          </div>
+
+          <div class="auto-type-box">
+            <span class="auto-type-label">Tipo asignado automáticamente</span>
+            <strong id="rec-tipo-preview">—</strong>
+          </div>
+
+          <button class="btn-primary btn-full" type="submit">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+            Guardar recolector
+          </button>
+        </form>
+      </aside>
+    </section>
+  </main>
+
+  <!-- Modal para completar recolección (peso + recolector a cargo) -->
+  <div class="modal-backdrop" id="completar-modal" hidden role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <span class="section-tag">CIERRE DE RECOLECCIÓN</span>
+          <h3 id="modal-title">Confirmar recolección</h3>
+        </div>
+        <button class="icon-close" type="button" id="cerrar-modal" aria-label="Cerrar ventana">✕</button>
+      </div>
+
+      <p class="helper-copy" id="modal-peticion-info">Petición #—</p>
+
+      <form id="completar-form" class="stack-form" novalidate>
+        <input type="hidden" id="comp-id-peticion">
+
+        <div class="field">
+          <label for="comp-recolector">Recolector asignado</label>
+          <select id="comp-recolector" required>
+            <option value="">Selecciona un recolector a cargo</option>
+          </select>
+          <small class="error" id="comp-recolector-error"></small>
+        </div>
+
+        <div class="field">
+          <label for="comp-peso">Peso recolectado (kg)</label>
+          <input id="comp-peso" type="number" step="0.01" min="0.1" placeholder="Ej. 4.50" required>
+          <small class="error" id="comp-peso-error"></small>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn-secondary" type="button" id="cancelar-modal">Cancelar</button>
+          <button class="btn-primary" type="submit">Confirmar y sumar puntos</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="admin.js"></script>
+</body>
+</html>
