@@ -90,7 +90,7 @@ def listar_recolectores_por_admin(
     recolectores = (
         db.query(Recolector)
         .filter(Recolector.tipo == admin.tipo)
-        .order_by(Recolector.fecha_registro.desc())
+        .order_by(Recolector.id_recolector.desc())
         .all()
     )
 
@@ -102,7 +102,6 @@ def listar_recolectores_por_admin(
                 "nombre": r.nombre,
                 "tipo": r.tipo,
                 "telefono": r.telefono,
-                "fecha_registro": r.fecha_registro,
             }
             for r in recolectores
         ],
