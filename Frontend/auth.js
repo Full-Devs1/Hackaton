@@ -1,7 +1,7 @@
 'use strict';
 
 // Cambia esta URL cuando el backend en Python este levantado
-const API_BASE_URL = '';
+const API_BASE_URL = 'http://localhost:8000';
 
 const $ = (id) => document.getElementById(id);
 const loginTab = $('login-tab');
