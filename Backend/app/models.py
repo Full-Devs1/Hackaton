@@ -11,7 +11,6 @@ class Usuario(Base):
     correo = Column(String(150), unique=True, nullable=False, index=True)
     nombre = Column(String(120), nullable=False)
     contrasena = Column(String(255), nullable=True)
-    fecha_registro = Column(DateTime(timezone=True), server_default=func.now())
 
     puntos = relationship("PuntosUsu", back_populates="usuario", uselist=False)
     peticiones = relationship("Peticion", back_populates="usuario")
@@ -22,7 +21,6 @@ class PuntosUsu(Base):
 
     id_usuario = Column(Integer, ForeignKey("usuario.id_usuario", ondelete="CASCADE"), primary_key=True)
     puntos = Column(Integer, nullable=False, default=0)
-    ultima_actualizacion = Column(DateTime(timezone=True), server_default=func.now())
 
     usuario = relationship("Usuario", back_populates="puntos")
 
@@ -33,9 +31,8 @@ class Administrador(Base):
     id_administrador = Column(Integer, primary_key=True, index=True)
     correo = Column(String(150), unique=True, nullable=False, index=True)
     nombre = Column(String(120), nullable=False)
-    tipo = Column(String(30), nullable=False)  # 'reciclador' | 'huertero'
+    tipo = Column(String(30), nullable=False)
     contrasena = Column(String(255), nullable=True)
-    fecha_registro = Column(DateTime(timezone=True), server_default=func.now())
 
 
 class Recolector(Base):
@@ -43,9 +40,8 @@ class Recolector(Base):
 
     id_recolector = Column(Integer, primary_key=True, index=True)
     nombre = Column(String(120), nullable=False)
-    tipo = Column(String(30), nullable=False)  # 'reciclador' | 'huertero'
+    tipo = Column(String(30), nullable=False)
     telefono = Column(String(20), nullable=True)
-    fecha_registro = Column(DateTime(timezone=True), server_default=func.now())
 
 
 class Peticion(Base):
@@ -69,7 +65,6 @@ class Imagen(Base):
     id_imagen = Column(Integer, primary_key=True, index=True)
     id_peticion = Column(Integer, ForeignKey("peticiones.id_peticion", ondelete="CASCADE"), nullable=False)
     url_imagen = Column(Text, nullable=False)
-    fecha_subida = Column(DateTime(timezone=True), server_default=func.now())
 
     peticion = relationship("Peticion", back_populates="imagenes")
 
