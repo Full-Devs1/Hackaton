@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Peticion, Imagen, PetCompletado, PuntosUsu, Usuario, Administrador, Recolector
-from app.schemas import PeticionCreate, ProgramarIn, CompletarIn
+from app.schemas import PeticionCreate, CompletarIn
 
 router = APIRouter(prefix="/api/peticiones", tags=["Peticiones"])
 
@@ -16,17 +16,24 @@ def crear_peticion(data: PeticionCreate, db: Session = Depends(get_db)):
         id_usuario=data.id_usuario,
         etiqueta=data.etiqueta.strip(),
         direccion=data.direccion.strip(),
-        estado="RECIBIDA",
     )
     db.add(pet)
     db.flush()
 
-    if data.url_imagen:
+    # Solo se almacena la URL de la imagen (alojada externamente / Storage)
+    if data.url_imagen and data.url_imagen.strip():
         db.add(Imagen(id_peticion=pet.id_peticion, url_imagen=data.url_imagen.strip()))
 
     db.commit()
     db.refresh(pet)
-    return {"id_peticion": pet.id_peticion, "etiqueta": pet.etiqueta, "estado": pet.estado}
+    return {
+        "id_peticion": pet.id_peticion,
+        "id_usuario": pet.id_usuario,
+        "etiqueta": pet.etiqueta,
+        "direccion": pet.direccion,
+        "fecha_creacion": pet.fecha_creacion,
+        "imagenes": [img.url_imagen for img in pet.imagenes],
+    }
 
 
 @router.get("")
@@ -34,33 +41,19 @@ def listar_peticiones(etiqueta: str | None = None, db: Session = Depends(get_db)
     query = db.query(Peticion)
     if etiqueta:
         query = query.filter(Peticion.etiqueta == etiqueta)
-    items = query.order_by(Peticion.fecha_peticion.desc()).all()
+    items = query.order_by(Peticion.fecha_creacion.desc()).all()
     return [
         {
             "id_peticion": p.id_peticion,
             "id_usuario": p.id_usuario,
             "etiqueta": p.etiqueta,
-            "estado": p.estado,
-            "fecha_peticion": p.fecha_peticion,
-            "fecha_programada": p.fecha_programada,
-            "hora_programada": p.hora_programada,
+            "direccion": p.direccion,
+            "fecha_creacion": p.fecha_creacion,
+            "completada": p.completado is not None,
             "imagenes": [img.url_imagen for img in p.imagenes],
         }
         for p in items
     ]
-
-
-@router.patch("/{id_peticion}/programar")
-def programar_peticion(id_peticion: int, data: ProgramarIn, db: Session = Depends(get_db)):
-    pet = db.query(Peticion).filter(Peticion.id_peticion == id_peticion).first()
-    if not pet:
-        raise HTTPException(status_code=404, detail="Petición no encontrada.")
-
-    pet.fecha_programada = data.fecha_programada.strip()
-    pet.hora_programada = data.hora_programada.strip()
-    pet.estado = "PROGRAMADA"
-    db.commit()
-    return {"id_peticion": pet.id_peticion, "estado": pet.estado, "fecha_programada": pet.fecha_programada, "hora_programada": pet.hora_programada}
 
 
 @router.post("/{id_peticion}/completar")
@@ -68,7 +61,7 @@ def completar_peticion(id_peticion: int, data: CompletarIn, db: Session = Depend
     pet = db.query(Peticion).filter(Peticion.id_peticion == id_peticion).first()
     if not pet:
         raise HTTPException(status_code=404, detail="Petición no encontrada.")
-    if pet.estado == "RECOLECTADA":
+    if pet.completado is not None:
         raise HTTPException(status_code=400, detail="Esta petición ya fue completada.")
     if not db.query(Administrador).filter(Administrador.id_administrador == data.id_administrador).first():
         raise HTTPException(status_code=404, detail="Administrador no encontrado.")
@@ -81,15 +74,16 @@ def completar_peticion(id_peticion: int, data: CompletarIn, db: Session = Depend
         id_recolector=data.id_recolector,
         peso=data.peso,
     )
-    pet.estado = "RECOLECTADA"
     db.add(cierre)
-
-    puntos_ganados = int(round(data.peso * data.puntos_por_kg))
-    registro_puntos = db.query(PuntosUsu).filter(PuntosUsu.id_usuario == pet.id_usuario).first()
-    if registro_puntos:
-        registro_puntos.puntos += puntos_ganados
-    else:
-        db.add(PuntosUsu(id_usuario=pet.id_usuario, puntos=puntos_ganados))
-
     db.commit()
-    return {"id_peticion": pet.id_peticion, "estado": pet.estado, "peso": data.peso, "puntos_ganados": puntos_ganados}
+
+    # El trigger trg_after_pet_completado en PostgreSQL suma los puntos automáticamente
+    reg_puntos = db.query(PuntosUsu).filter(PuntosUsu.id_usuario == pet.id_usuario).first()
+    puntos_actuales = reg_puntos.puntos if reg_puntos else 0
+
+    return {
+        "id_peticion": pet.id_peticion,
+        "completada": True,
+        "peso": data.peso,
+        "puntos_totales_usuario": puntos_actuales,
+    }

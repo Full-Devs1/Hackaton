@@ -8,6 +8,15 @@ from app.security import hash_password, verify_password, create_token
 router = APIRouter(prefix="/api/auth", tags=["Autenticacion"])
 
 
+def _password_ok(plain: str, stored: str | None) -> bool:
+    if not stored:
+        return False
+    # Soporta contraseñas hasheadas o claves planas iniciales del seed de prueba
+    if stored.startswith("pbkdf2_sha256$"):
+        return verify_password(plain, stored)
+    return plain == stored
+
+
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 def register_usuario(data: RegisterIn, db: Session = Depends(get_db)):
     correo = data.email.strip().lower()
@@ -17,8 +26,7 @@ def register_usuario(data: RegisterIn, db: Session = Depends(get_db)):
     nuevo = Usuario(
         nombre=data.nombre.strip(),
         correo=correo,
-        telefono=data.telefono.strip(),
-        password_hash=hash_password(data.password),
+        contrasena=hash_password(data.password),
     )
     db.add(nuevo)
     db.flush()
@@ -30,7 +38,12 @@ def register_usuario(data: RegisterIn, db: Session = Depends(get_db)):
     token = create_token(str(nuevo.id_usuario), "usuario")
     return {
         "access_token": token,
-        "usuario": {"id_usuario": nuevo.id_usuario, "nombre": nuevo.nombre, "correo": nuevo.correo, "puntos": 0},
+        "usuario": {
+            "id_usuario": nuevo.id_usuario,
+            "nombre": nuevo.nombre,
+            "correo": nuevo.correo,
+            "puntos": 0,
+        },
     }
 
 
@@ -38,14 +51,19 @@ def register_usuario(data: RegisterIn, db: Session = Depends(get_db)):
 def login_usuario(data: LoginIn, db: Session = Depends(get_db)):
     correo = data.email.strip().lower()
     user = db.query(Usuario).filter(Usuario.correo == correo).first()
-    if not user or not verify_password(data.password, user.password_hash):
+    if not user or not _password_ok(data.password, user.contrasena):
         raise HTTPException(status_code=401, detail="Correo o contraseña incorrectos.")
 
     puntos = user.puntos.puntos if user.puntos else 0
     token = create_token(str(user.id_usuario), "usuario")
     return {
         "access_token": token,
-        "usuario": {"id_usuario": user.id_usuario, "nombre": user.nombre, "correo": user.correo, "puntos": puntos},
+        "usuario": {
+            "id_usuario": user.id_usuario,
+            "nombre": user.nombre,
+            "correo": user.correo,
+            "puntos": puntos,
+        },
     }
 
 
@@ -53,10 +71,10 @@ def login_usuario(data: LoginIn, db: Session = Depends(get_db)):
 def login_admin(data: LoginIn, db: Session = Depends(get_db)):
     correo = data.email.strip().lower()
     admin = db.query(Administrador).filter(Administrador.correo == correo).first()
-    if not admin or not verify_password(data.password, admin.password_hash):
+    if not admin or not _password_ok(data.password, admin.contrasena):
         raise HTTPException(status_code=401, detail="Credenciales administrativas inválidas.")
 
-    token = create_token(str(admin.id_administrador), f"admin_{admin.tipo}")
+    token = create_token(str(admin.id_administrador), f"admin_{admin.tipo or 'General'}")
     return {
         "access_token": token,
         "administrador": {
