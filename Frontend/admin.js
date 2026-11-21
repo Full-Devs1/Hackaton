@@ -181,9 +181,16 @@ async function cargarRecolectores() {
         <li class="recolector-item">
           <div class="recolector-info">
             <strong>${escaparHtml(r.nombre)}</strong>
-            <span>Tel: ${escaparHtml(r.telefono || 'Sin teléfono')}</span>
+            <span>Tel: ${escaparHtml(r.telefono || 'Sin teléfono')} · <em class="recolector-type-inline">${escaparHtml(r.tipo)}</em></span>
           </div>
-          <span class="recolector-type-tag">${escaparHtml(r.tipo)}</span>
+          <button
+            class="btn-danger-sm"
+            type="button"
+            data-eliminar-recolector="${r.id_recolector}"
+            data-nombre-recolector="${escaparHtml(r.nombre)}"
+          >
+            Eliminar
+          </button>
         </li>
       `
       )
@@ -258,6 +265,29 @@ function inicializar() {
     const btn = event.target.closest('[data-completar]');
     if (!btn) return;
     abrirModalCompletar(btn.dataset.completar, btn.dataset.direccion);
+  });
+
+  $('recolectores-list').addEventListener('click', async (event) => {
+    const btn = event.target.closest('[data-eliminar-recolector]');
+    if (!btn) return;
+
+    const idRecolector = btn.dataset.eliminarRecolector;
+    const nombreRecolector = btn.dataset.nombreRecolector || 'este recolector';
+    if (!confirm(`¿Seguro que deseas eliminar a ${nombreRecolector}?`)) return;
+
+    try {
+      const params = new URLSearchParams({ id_administrador: String(adminActual.id_administrador) });
+      const res = await fetch(`${API_BASE_URL}/api/admin/recolectores/${idRecolector}?${params.toString()}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.detail || 'No se pudo eliminar el recolector.');
+
+      notify('Recolector eliminado correctamente.');
+      await cargarRecolectores();
+    } catch (err) {
+      notify(err.message);
+    }
   });
 
   $('recolector-form').addEventListener('submit', async (event) => {

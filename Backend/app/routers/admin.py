@@ -89,7 +89,7 @@ def listar_recolectores_por_admin(
 
     recolectores = (
         db.query(Recolector)
-        .filter(Recolector.tipo == admin.tipo)
+        .filter(Recolector.id_administrador == admin.id_administrador)
         .order_by(Recolector.id_recolector.desc())
         .all()
     )
@@ -99,6 +99,7 @@ def listar_recolectores_por_admin(
         "recolectores": [
             {
                 "id_recolector": r.id_recolector,
+                "id_administrador": r.id_administrador,
                 "nombre": r.nombre,
                 "tipo": r.tipo,
                 "telefono": r.telefono,
@@ -115,6 +116,7 @@ def crear_recolector_por_admin(data: RecolectorAdminCreate, db: Session = Depend
         raise HTTPException(status_code=404, detail="Administrador no encontrado.")
 
     nuevo = Recolector(
+        id_administrador=admin.id_administrador,
         nombre=data.nombre.strip(),
         tipo=admin.tipo,
         telefono=data.telefono.strip(),
@@ -125,7 +127,41 @@ def crear_recolector_por_admin(data: RecolectorAdminCreate, db: Session = Depend
 
     return {
         "id_recolector": nuevo.id_recolector,
+        "id_administrador": nuevo.id_administrador,
         "nombre": nuevo.nombre,
         "tipo": nuevo.tipo,
         "telefono": nuevo.telefono,
     }
+
+
+@router.delete("/recolectores/{id_recolector}")
+def eliminar_recolector_por_admin(
+    id_recolector: int,
+    id_administrador: int = Query(..., gt=0),
+    db: Session = Depends(get_db),
+):
+    recolector = (
+        db.query(Recolector)
+        .filter(
+            Recolector.id_recolector == id_recolector,
+            Recolector.id_administrador == id_administrador,
+        )
+        .first()
+    )
+    if not recolector:
+        raise HTTPException(
+            status_code=404,
+            detail="Recolector no encontrado o no pertenece a este administrador.",
+        )
+
+    try:
+        db.delete(recolector)
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise HTTPException(
+            status_code=409,
+            detail="No se puede eliminar este recolector porque tiene recolecciones completadas asociadas.",
+        )
+
+    return {"eliminado": True, "id_recolector": id_recolector}

@@ -484,3 +484,25 @@ button, input, select { font: inherit; }
   .hero-card { padding: 20px; }
   .panel-card { padding: 18px; }
 }
+
+.recolector-type-inline {
+  font-style: normal;
+  font-weight: 600;
+  color: var(--eco-forest);
+  text-transform: capitalize;
+}
+.btn-danger-sm {
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid #C94A41;
+  background: #FFF6F5;
+  color: #9E2A22;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.btn-danger-sm:hover {
+  background: #C94A41;
+  color: #FFFFFF;
+}

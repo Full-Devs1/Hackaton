@@ -39,6 +39,7 @@ class Recolector(Base):
     __tablename__ = "recolectores"
 
     id_recolector = Column(Integer, primary_key=True, index=True)
+    id_administrador = Column(Integer, ForeignKey("administradores.id_administrador", ondelete="CASCADE"), nullable=True)
     nombre = Column(String(120), nullable=False)
     tipo = Column(String(30), nullable=False)
     telefono = Column(String(20), nullable=True)
