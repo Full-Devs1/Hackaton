@@ -145,8 +145,9 @@ def completar_peticion(id_peticion: int, data: CompletarIn, db: Session = Depend
         "puntos_totales_usuario": puntos_actuales,
     }
 
-    @router.get("/recolectores")
-    def listar_recolectores(db: Session = Depends(get_db)):
+
+@router.get("/recolectores")
+def listar_recolectores(db: Session = Depends(get_db)):
     recolectores = db.query(Recolector).order_by(Recolector.tipo, Recolector.nombre).all()
     return [
         {
