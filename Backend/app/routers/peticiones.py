@@ -47,6 +47,7 @@ def listar_peticiones(id_usuario: int | None = None, etiqueta: str | None = None
     if estado:
         query = query.filter(Peticion.estado == estado)
     items = query.order_by(Peticion.fecha_creacion.desc()).all()
+
     return [
         {
             "id_peticion": p.id_peticion,
@@ -99,10 +100,10 @@ def completar_peticion(id_peticion: int, data: CompletarIn, db: Session = Depend
 
     @router.get("/usuario/{id_usuario}")
     def obtener_resumen_usuario(id_usuario: int, db: Session = Depends(get_db)):
-    usu = db.query(Usuario).filter(Usuario.id_usuario == id_usuario).first()
-    if not usu:
-        raise HTTPException(status_code=404, detail="Usuario no encontrado.")
-    puntos_reg = db.query(PuntosUsu).filter(PuntosUsu.id_usuario == id_usuario).first()
+        usu = db.query(Usuario).filter(Usuario.id_usuario == id_usuario).first()
+        if not usu:
+            raise HTTPException(status_code=404, detail="Usuario no encontrado.")
+        puntos_reg = db.query(PuntosUsu).filter(PuntosUsu.id_usuario == id_usuario).first()
     return {
         "id_usuario": usu.id_usuario,
         "nombre": usu.nombre,
