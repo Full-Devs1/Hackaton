@@ -1,6 +1,6 @@
 'use strict';
 
-const SUPABASE_URL = 'https://bqhucmjjhuakmwbbhdky.supabase.co/rest/v1/';
+const SUPABASE_URL = 'https://bqhucmjjhuakmwbbhdky.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_KqWrGVVJWd0lu9W7PDXoKw_1fL5D04a';
 const BUCKET_NAME = 'imagenes-peticiones';
 const API_BASE_URL = 'http://127.0.0.1:8000';
