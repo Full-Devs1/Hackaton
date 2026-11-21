@@ -58,7 +58,15 @@ async function enviarAuth(endpoint, payload) {
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new Error(data.detail || data.message || 'No se pudo completar la operación.');
+    let mensaje = 'No se pudo completar la operación.';
+    if (Array.isArray(data.detail) && data.detail.length > 0) {
+      mensaje = data.detail.map((err) => err.msg || 'Campo inválido').join(' · ');
+    } else if (typeof data.detail === 'string') {
+      mensaje = data.detail;
+    } else if (typeof data.message === 'string') {
+      mensaje = data.message;
+    }
+    throw new Error(mensaje);
   }
   return data;
 }
