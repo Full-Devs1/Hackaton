@@ -102,7 +102,7 @@ def listar_peticiones(id_usuario: int | None = None, etiqueta: str | None = None
             "etiqueta": p.etiqueta,
             "direccion": p.direccion,
             "estado": p.estado,
-            "fecha_peticion": pet.fecha_peticion,
+            "fecha_peticion": p.fecha_peticion,
             "completada": p.estado == "completada" or p.completado is not None,
             "imagenes": [img.url_imagen for img in p.imagenes],
         }
