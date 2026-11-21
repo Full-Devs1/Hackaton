@@ -1,5 +1,8 @@
 'use strict';
 
+const SUPABASE_URL = 'https://bqhucmjjhuakmwbbhdky.supabase.co/rest/v1/';
+const SUPABASE_ANON_KEY = 'sb_publishable_KqWrGVVJWd0lu9W7PDXoKw_1fL5D04a';
+const BUCKET_NAME = 'imagenes-peticiones';
 const API_BASE_URL = 'http://127.0.0.1:8000';
 const STORAGE_KEY = 'ecoconecta_sesion';
 
@@ -131,7 +134,7 @@ function renderizarPeticiones() {
             <div>
               <h3>Solicitud #${p.id_peticion} · ${escaparHtml(p.etiqueta)}</h3>
               <div class="petition-meta">
-                <span>${escaparHtml(formatearFecha(p.fecha_creacion))}</span>
+                <span>${escaparHtml(formatearFecha(p.fecha_peticion))}</span>
                 <span>• Etiqueta: <strong>${escaparHtml(p.etiqueta)}</strong></span>
               </div>
               <p class="petition-address"><strong>Dirección:</strong> ${escaparHtml(p.direccion)}</p>
@@ -154,6 +157,36 @@ function cerrarModal(id) {
   if (!document.querySelector('.modal-bg.show')) {
     document.body.style.overflow = '';
   }
+}
+
+async function subirImagenASupabase(file) {
+  if (!SUPABASE_URL.startsWith('https://') || !SUPABASE_ANON_KEY) {
+    throw new Error('Configura SUPABASE_URL y SUPABASE_ANON_KEY en usuario.js para subir archivos.');
+  }
+
+  const extension = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const nombreArchivo = `peticiones/usu_${usuarioActual.id_usuario}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}.${extension || 'jpg'}`;
+
+  const uploadRes = await fetch(
+    `${SUPABASE_URL}/storage/v1/object/${BUCKET_NAME}/${nombreArchivo}`,
+    {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': file.type || 'application/octet-stream',
+        'x-upsert': 'true',
+      },
+      body: file,
+    }
+  );
+
+  if (!uploadRes.ok) {
+    const errText = await uploadRes.text().catch(() => '');
+    throw new Error(`Error al subir imagen a Storage (${uploadRes.status}): ${errText || 'verifica el bucket y políticas'}`);
+  }
+
+  return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET_NAME}/${nombreArchivo}`;
 }
 
 function inicializar() {
@@ -236,29 +269,41 @@ function inicializar() {
     btnSubmit.disabled = true;
 
     try {
-      const res = await fetch(`${API_BASE_URL}/api/peticiones`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id_usuario: usuarioActual.id_usuario,
-          etiqueta,
-          direccion,
-          url_imagen: urlImagen || null,
-        }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.detail || 'No se pudo registrar la petición.');
+    let urlFinal = urlImagen;
+    const archivo = $('archivoImagen')?.files?.[0];
 
-      $('requestForm').reset();
-      cerrarModal('requestModal');
-      mostrarToast('Petición registrada correctamente.');
-      await cargarPeticiones();
-    } catch (err) {
-      $('urlImagen-error').textContent = err.message;
-      mostrarToast(err.message);
-    } finally {
-      btnSubmit.disabled = false;
+    if (archivo) {
+      if (archivo.size > 5 * 1024 * 1024) {
+        $('urlImagen-error').textContent = 'La imagen no debe superar los 5 MB.';
+        return;
+      }
+      urlFinal = await subirImagenASupabase(archivo);
     }
+
+    const res = await fetch(`${API_BASE_URL}/api/peticiones`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id_usuario: usuarioActual.id_usuario,
+        etiqueta,
+        direccion,
+        url_imagen: urlFinal || null,
+      }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.detail || 'No se pudo registrar la petición.');
+
+    $('requestForm').reset();
+    cerrarModal('requestModal');
+    mostrarToast('Petición registrada correctamente.');
+    await cargarPeticiones();
+  } catch (err) {
+    $('urlImagen-error').textContent = err.message;
+    mostrarToast(err.message);
+  } finally {
+    btnSubmit.disabled = false;
+  }
   });
 }
 

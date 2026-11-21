@@ -159,9 +159,14 @@
         </div>
 
         <div class="field">
-          <label for="urlImagen">URL de la imagen (opcional)</label>
-          <input id="urlImagen" name="url_imagen" type="url" placeholder="https://... (URL alojada en Storage o externa)">
-          <small class="field-hint">Se guarda únicamente la URL de la imagen alojada externamente.</small>
+          <label for="archivoImagen">Subir foto del residuo (opcional)</label>
+          <input id="archivoImagen" name="archivo_imagen" type="file" accept="image/png,image/jpeg,image/webp">
+          <small class="field-hint">Se subirá al almacenamiento público y solo se guardará su URL en la base de datos.</small>
+        </div>
+
+        <div class="field">
+          <label for="urlImagen">O pega una URL de imagen (opcional)</label>
+          <input id="urlImagen" name="url_imagen" type="url" placeholder="https://...">
           <small class="field-error" id="urlImagen-error"></small>
         </div>
 

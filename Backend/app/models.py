@@ -53,7 +53,7 @@ class Peticion(Base):
     etiqueta = Column(String(100), nullable=False)
     direccion = Column(Text, nullable=False)
     estado = Column(String(30), nullable=False, default="pendiente")
-    fecha_creacion = Column(DateTime(timezone=True), server_default=func.now())
+    fecha_peticion = Column(DateTime(timezone=True), server_default=func.now())
 
     usuario = relationship("Usuario", back_populates="peticiones")
     imagenes = relationship("Imagen", back_populates="peticion", cascade="all, delete-orphan")
