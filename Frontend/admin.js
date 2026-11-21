@@ -312,7 +312,7 @@ function inicializar() {
     });
   });
 
- $('petitions-list')?.addEventListener('click', (e) => {
+ $('peticiones-list')?.addEventListener('click', (e) => {
     const btnCompletar = e.target.closest('[data-completar]');
     if (btnCompletar) {
       abrirModalCompletar(btnCompletar.dataset.completar, btnCompletar.dataset.direccion || '');
@@ -322,7 +322,7 @@ function inicializar() {
     if (e.target.closest('button, select, input')) return;
     const card = e.target.closest('[data-ver-peticion]');
     if (!card) return;
-    abrirDetallePeticion(card.dataset.verPeticicion);
+    abrirDetallePeticion(card.dataset.verPeticion);
   });
 
   $('recolectores-list').addEventListener('click', async (event) => {
