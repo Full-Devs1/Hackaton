@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#063B2E">
+  <title>EcoConecta Villas de San Pablo | Portal ciudadano</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="usuario.css">
+</head>
+<body>
+  <header class="header">
+    <div class="header-inner">
+      <a class="brand brand-logo-wrap" href="usuario.html" aria-label="EcoConecta Villas de San Pablo">
+        <img class="brand-logo" src="logo-ecoconecta-original.png" alt="Logotipo oficial de EcoConecta Villas de San Pablo">
+      </a>
+
+      <div class="account" id="accountWrap">
+        <button class="account-btn" id="accountBtn" type="button" aria-expanded="false" aria-controls="accountMenu">
+          <span class="avatar" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <circle cx="12" cy="8" r="3.5"/><path d="M5 20c.6-3.5 3.1-5.5 7-5.5s6.4 2 7 5.5"/>
+            </svg>
+          </span>
+          <span class="account-label">
+            <strong id="accountName" aria-live="polite">Cargando...</strong>
+            <small id="accountEmail">Verificando sesión</small>
+          </span>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+            <path d="m6 9 6 6 6-6"/>
+          </svg>
+        </button>
+
+        <div class="dropdown" id="accountMenu" role="region" aria-label="Opciones de cuenta">
+          <div class="profile-summary">
+            <span class="role">Ciudadano</span>
+            <strong id="menuUserName">Vecino</strong>
+            <small id="menuUserEmail">correo@ejemplo.com</small>
+          </div>
+          <div class="logout-divider"></div>
+          <button class="logout-btn" id="logoutBtn" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M10 17l5-5-5-5M15 12H3"/><path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6"/>
+            </svg>
+            <span class="logout-copy">Cerrar sesión</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="portal">
+    <section class="welcome">
+      <span class="kicker">PORTAL CIUDADANO</span>
+      <h1 id="welcomeTitle">¡Hola! Bienvenido a EcoConecta</h1>
+      <p>Solicita recolección para tus residuos orgánicos o reciclables, revisa el estado de tus peticiones y acumula puntos en <strong>Villas de San Pablo</strong>.</p>
+    </section>
+
+    <section aria-labelledby="actividadHeading">
+      <div class="section-heading">
+        <div>
+          <h2 id="actividadHeading">Tu actividad</h2>
+          <p>Resumen de tus puntos y solicitudes registradas.</p>
+        </div>
+      </div>
+
+      <div class="metrics">
+        <article class="metric points">
+          <span class="metric-icon" aria-hidden="true">★</span>
+          <div class="metric-label">Puntos acumulados</div>
+          <div class="metric-value" id="pointsValue">0 pts</div>
+          <div class="metric-note">+10 pts al completar cada recolección</div>
+        </article>
+
+        <article class="metric">
+          <span class="metric-icon" aria-hidden="true">▲</span>
+          <div class="metric-label">Peticiones completadas</div>
+          <div class="metric-value" id="completedCountValue">0</div>
+          <div class="metric-note">Recolecciones confirmadas</div>
+        </article>
+
+        <button class="metric metric-action" id="redeemBtn" type="button">
+          <div class="metric-label">Beneficios</div>
+          <div class="metric-value">Canjear puntos →</div>
+          <span class="metric-note">Consulta tu saldo disponible</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="petitions-panel" aria-label="Peticiones del ciudadano">
+      <div class="petitions-top">
+        <div>
+          <h2>Mis peticiones</h2>
+          <p>Revisa tus solicitudes de recolección y su estado actual.</p>
+        </div>
+        <span class="total-pill" id="totalPill">0 peticiones</span>
+      </div>
+
+      <div class="filters" role="group" aria-label="Filtrar peticiones por estado">
+        <button class="filter active-filter" data-filter="todas" type="button">Todas</button>
+        <button class="filter" data-filter="pendiente" type="button">Pendientes</button>
+        <button class="filter" data-filter="completada" type="button">Completadas</button>
+      </div>
+
+      <div class="petition-list" id="petitionList"></div>
+
+      <div class="empty" id="emptyState">
+        <b>No hay peticiones en esta categoría</b>
+        <p>Cuando tengas solicitudes con este estado, aparecerán aquí.</p>
+      </div>
+
+      <div class="actions">
+        <button class="secondary" id="refreshBtn" type="button">Actualizar lista</button>
+        <button class="primary" id="newPetitionBtn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+          Nueva petición
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div>
+        <b>EcoConecta · Villas de San Pablo</b>
+        <p>La sostenibilidad se construye con la participación de todos.</p>
+      </div>
+      <small>Portal de usuario ciudadano<br>Comunidad sostenible</small>
+    </div>
+  </footer>
+
+  <!-- Modal crear petición (alineado con peticiones + imagen.url_imagen) -->
+  <div class="modal-bg" id="requestModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal">
+      <div class="modal-head">
+        <h2 id="modalTitle">Crear nueva petición</h2>
+        <button class="close" data-close="requestModal" type="button" aria-label="Cerrar">×</button>
+      </div>
+
+      <form id="requestForm" novalidate>
+        <div class="field">
+          <label for="etiqueta">Tipo de residuo (etiqueta)</label>
+          <select id="etiqueta" name="etiqueta" required>
+            <option value="">Selecciona una etiqueta</option>
+            <option value="organico">Orgánico (Huerta / Compostaje)</option>
+            <option value="reciclable">Reciclable (Aprovechable)</option>
+          </select>
+          <small class="field-error" id="etiqueta-error"></small>
+        </div>
+
+        <div class="field">
+          <label for="direccion">Dirección de recolección</label>
+          <input id="direccion" name="direccion" type="text" maxlength="255" required placeholder="Ej. Manzana 12 Casa 4, Villas de San Pablo">
+          <small class="field-error" id="direccion-error"></small>
+        </div>
+
+        <div class="field">
+          <label for="urlImagen">URL de la imagen (opcional)</label>
+          <input id="urlImagen" name="url_imagen" type="url" placeholder="https://... (URL alojada en Storage o externa)">
+          <small class="field-hint">Se guarda únicamente la URL de la imagen alojada externamente.</small>
+          <small class="field-error" id="urlImagen-error"></small>
+        </div>
+
+        <div class="modal-actions">
+          <button class="secondary" data-close="requestModal" type="button">Cancelar</button>
+          <button class="primary" type="submit" id="submitPetitionBtn">Registrar petición</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal beneficios -->
+  <div class="modal-bg" id="benefitsModal" role="dialog" aria-modal="true" aria-labelledby="benefitsTitle">
+    <div class="modal">
+      <div class="modal-head">
+        <h2 id="benefitsTitle">Canjear puntos</h2>
+        <button class="close" data-close="benefitsModal" type="button" aria-label="Cerrar">×</button>
+      </div>
+      <p class="modal-help" id="benefitsSummary">Tienes 0 puntos acumulados.</p>
+      <div class="modal-actions">
+        <button class="primary" data-close="benefitsModal" type="button">Entendido</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="usuario.js"></script>
+</body>
+</html>

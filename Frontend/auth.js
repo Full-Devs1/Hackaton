@@ -115,6 +115,9 @@ $('login-form').addEventListener('submit', async (event) => {
   try {
     const data = await enviarAuth('/api/auth/login', { email, password });
     guardarSesion({ ...data, tipo_acceso: 'usuario' });
+    setTimeout(() => {
+      window.location.href = 'usuario.html';
+    }, 500);
     notify(`Bienvenido, ${data.usuario?.nombre || 'usuario'}.`);
   } catch (err) {
     setError('login-password', err.message);
@@ -144,6 +147,9 @@ $('register-form').addEventListener('submit', async (event) => {
       password,
     });
     guardarSesion({ ...data, tipo_acceso: 'usuario' });
+    setTimeout(() => {
+      window.location.href = 'usuario.html';
+    }, 500);
     notify(`Cuenta creada para ${data.usuario?.nombre || name}.`);
   } catch (err) {
     setError('reg-email', err.message);

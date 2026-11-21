@@ -38,8 +38,10 @@ def crear_peticion(data: PeticionCreate, db: Session = Depends(get_db)):
 
 
 @router.get("")
-def listar_peticiones(etiqueta: str | None = None, estado: str | None = None, db: Session = Depends(get_db)):
+def listar_peticiones(id_usuario: int | None = None, etiqueta: str | None = None, estado: str | None = None, db: Session = Depends(get_db)):
     query = db.query(Peticion)
+    if id_usuario is not None:
+        query = query.filter(Peticion.id_usuario == id_usuario)
     if etiqueta:
         query = query.filter(Peticion.etiqueta == etiqueta)
     if estado:
@@ -93,4 +95,17 @@ def completar_peticion(id_peticion: int, data: CompletarIn, db: Session = Depend
         "completada": True,
         "peso": data.peso,
         "puntos_totales_usuario": puntos_actuales,
+    }
+
+    @router.get("/usuario/{id_usuario}")
+    def obtener_resumen_usuario(id_usuario: int, db: Session = Depends(get_db)):
+    usu = db.query(Usuario).filter(Usuario.id_usuario == id_usuario).first()
+    if not usu:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado.")
+    puntos_reg = db.query(PuntosUsu).filter(PuntosUsu.id_usuario == id_usuario).first()
+    return {
+        "id_usuario": usu.id_usuario,
+        "nombre": usu.nombre,
+        "correo": usu.correo,
+        "puntos": puntos_reg.puntos if puntos_reg else 0,
     }
