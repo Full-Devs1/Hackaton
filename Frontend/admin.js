@@ -9,6 +9,52 @@ let adminActual = null;
 let peticionesAbiertas = false;
 let estadoFiltro = '';
 let recolectoresCache = [];
+let peticionesCache = [];
+let peticionSeleccionadaId = null;
+
+function abrirDetallePeticion(idPeticion) {
+  const pet = peticionesCache.find((item) => Number(item.id_peticion) === Number(idPeticion));
+  if (!pet) return;
+
+  peticionSeleccionadaId = pet.id_peticion;
+  const etiquetaNormalizada = (pet.etiqueta || '').toLowerCase();
+  const imgUrl = Array.isArray(pet.imagenes) && pet.imagenes.length ? pet.imagenes[0] : '';
+
+  $('detail-etiqueta-badge').textContent = etiquetaNormalizada || 'Sin etiqueta';
+  $('detail-direccion').textContent = pet.direccion || 'No especificada';
+  $('detail-estado').textContent = pet.estado || 'pendiente';
+  $('detail-nueva-etiqueta').value = etiquetaNormalizada === 'reciclable' ? 'reciclable' : 'organico';
+
+  const imgEl = $('detail-imagen-img');
+  const sinImgEl = $('detail-sin-imagen');
+
+  if (imgUrl) {
+    imgEl.src = imgUrl;
+    imgEl.hidden = false;
+    sinImgEl.hidden = true;
+    imgEl.onerror = () => {
+      imgEl.hidden = true;
+      sinImgEl.hidden = false;
+      sinImgEl.textContent = 'No se pudo cargar la imagen desde la URL.';
+    };
+  } else {
+    imgEl.removeAttribute('src');
+    imgEl.hidden = true;
+    sinImgEl.hidden = false;
+    sinImgEl.textContent = 'Esta petición no tiene imagen adjunta.';
+  }
+
+  const modal = $('petition-detail-modal');
+  modal.hidden = false;
+  modal.classList.add('is-open');
+}
+
+function cerrarDetallePeticion() {
+  peticionSeleccionadaId = null;
+  const modal = $('petition-detail-modal');
+  modal.classList.remove('is-open');
+  modal.hidden = true;
+}
 
 function obtenerSesionAdmin() {
   const raw = sessionStorage.getItem(STORAGE_KEY) || localStorage.getItem(STORAGE_KEY);
@@ -109,6 +155,7 @@ async function cargarPeticiones() {
 
     const data = await apiGet(`/api/admin/peticiones?${params.toString()}`);
     const items = data.peticiones || [];
+    peticionesCache = items;
 
     if (!items.length) {
       feedbackEl.textContent = 'No hay peticiones registradas para tu categoría con este filtro.';
@@ -133,7 +180,7 @@ async function cargarPeticiones() {
           : `<button class="btn-primary btn-sm" type="button" data-completar="${p.id_peticion}" data-direccion="${escaparHtml(p.direccion)}">Marcar como recolectada</button>`;
 
         return `
-          <article class="peticion-card">
+          <article class="peticion-card" data-ver-peticion="${p.id_peticion}">
             <div class="peticion-media">${mediaHtml}</div>
             <div class="peticion-body">
               <div class="peticion-top">
@@ -143,7 +190,7 @@ async function cargarPeticiones() {
               <div class="peticion-meta">
                 <div><strong>Solicitud #${p.id_peticion}</strong> · ${escaparHtml(p.usuario_nombre)}</div>
                 <div><strong>Dirección:</strong> ${escaparHtml(p.direccion)}</div>
-                <div class="peticion-date">${formatearFecha(p.fecha_creacion)}</div>
+                <div class="peticion-date">${formatearFecha(p.fecha_peticion)}</div>
               </div>
               ${accionHtml}
             </div>
@@ -218,11 +265,15 @@ function abrirModalCompletar(idPeticion, direccion) {
       .map((r) => `<option value="${r.id_recolector}">${escaparHtml(r.nombre)} (${escaparHtml(r.telefono || 'Sin tel.')})</option>`)
       .join('');
 
-  $('completar-modal').hidden = false;
+  const modal = $('completar-modal');
+  modal.hidden = false;
+  modal.classList.add('is-open');
 }
 
 function cerrarModal() {
-  $('completar-modal').hidden = true;
+  const modal = $('completar-modal');
+  modal.classList.remove('is-open');
+  modal.hidden = true;
 }
 
 function inicializar() {
@@ -261,10 +312,17 @@ function inicializar() {
     });
   });
 
-  $('peticiones-list').addEventListener('click', (event) => {
-    const btn = event.target.closest('[data-completar]');
-    if (!btn) return;
-    abrirModalCompletar(btn.dataset.completar, btn.dataset.direccion);
+ $('petitions-list')?.addEventListener('click', (e) => {
+    const btnCompletar = e.target.closest('[data-completar]');
+    if (btnCompletar) {
+      abrirModalCompletar(btnCompletar.dataset.completar, btnCompletar.dataset.direccion || '');
+      return;
+    }
+
+    if (e.target.closest('button, select, input')) return;
+    const card = e.target.closest('[data-ver-peticion]');
+    if (!card) return;
+    abrirDetallePeticion(card.dataset.verPeticicion);
   });
 
   $('recolectores-list').addEventListener('click', async (event) => {
@@ -310,6 +368,38 @@ function inicializar() {
       await cargarRecolectores();
     } catch (err) {
       notify(err.message);
+    }
+  });
+
+  $('close-petition-detail-btn')?.addEventListener('click', cerrarDetallePeticion);
+  $('petition-detail-modal')?.addEventListener('click', (e) => {
+    if (e.target === $('petition-detail-modal')) cerrarDetallePeticion();
+  });
+
+  $('save-reclassify-btn')?.addEventListener('click', async () => {
+    if (!peticionSeleccionadaId) return;
+    const nuevaEtiqueta = $('detail-nueva-etiqueta').value;
+    const btnGuardar = $('save-reclassify-btn');
+    btnGuardar.disabled = true;
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/peticiones/${peticionSeleccionadaId}/etiqueta`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ etiqueta: nuevaEtiqueta }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.detail || 'No se pudo reclasificar la petición.');
+
+      notify(`Petición #${peticionSeleccionadaId} reclasificada como "${data.etiqueta}".`);
+      cerrarDetallePeticion();
+      if (typeof cargarPeticiones === 'function') {
+        await cargarPeticiones();
+      }
+    } catch (err) {
+      notify(err.message);
+    } finally {
+      btnGuardar.disabled = false;
     }
   });
 

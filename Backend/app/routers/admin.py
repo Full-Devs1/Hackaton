@@ -45,7 +45,7 @@ def listar_peticiones_por_admin(
     if estado:
         query = query.filter(Peticion.estado == estado.strip().lower())
 
-    resultados = query.order_by(Peticion.fecha_creacion.desc()).all()
+    resultados = query.order_by(Peticion.fecha_peticion.desc()).all()
 
     return {
         "administrador": {
@@ -62,7 +62,7 @@ def listar_peticiones_por_admin(
                 "etiqueta": pet.etiqueta,
                 "direccion": pet.direccion,
                 "estado": pet.estado,
-                "fecha_creacion": pet.fecha_creacion,
+                "fecha_peticion": pet.fecha_peticion,
                 "imagenes": [img.url_imagen for img in pet.imagenes],
                 "completado": {
                     "id_completado": pet.completado.id_completado,

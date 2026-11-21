@@ -73,10 +73,9 @@ class Imagen(Base):
 class PetCompletado(Base):
     __tablename__ = "pet_completado"
 
-    id_completado = Column(Integer, primary_key=True, index=True)
-    id_peticion = Column(Integer, ForeignKey("peticiones.id_peticion", ondelete="CASCADE"), unique=True, nullable=False)
-    id_administrador = Column(Integer, ForeignKey("administradores.id_administrador", ondelete="RESTRICT"), nullable=False)
-    id_recolector = Column(Integer, ForeignKey("recolectores.id_recolector", ondelete="RESTRICT"), nullable=False)
+    id_peticion = Column(Integer, ForeignKey("peticiones.id_peticion", ondelete="CASCADE"), primary_key=True)
+    id_administrador = Column(Integer, ForeignKey("administradores.id_administrador"), nullable=True)
+    id_recolector = Column(Integer, ForeignKey("recolectores.id_recolector"), nullable=True)
     peso = Column(Numeric(10, 2), nullable=True)
     fecha_completado = Column(DateTime(timezone=True), server_default=func.now())
 

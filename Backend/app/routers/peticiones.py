@@ -3,8 +3,41 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Peticion, Imagen, PetCompletado, PuntosUsu, Usuario, Administrador, Recolector
 from app.schemas import PeticionCreate, CompletarIn
+from pydantic import BaseModel
 
 router = APIRouter(prefix="/api/peticiones", tags=["Peticiones"])
+
+
+class EtiquetaUpdateIn(BaseModel):
+    etiqueta: str
+
+
+@router.patch("/{id_peticion}/etiqueta")
+def reclasificar_etiqueta_peticion(
+    id_peticion: int,
+    payload: EtiquetaUpdateIn,
+    db: Session = Depends(get_db),
+):
+    nueva_etiqueta = payload.etiqueta.strip().lower()
+    if nueva_etiqueta not in {"organico", "reciclable"}:
+        raise HTTPException(
+            status_code=400,
+            detail="La etiqueta debe ser 'organico' o 'reciclable'.",
+        )
+
+    peticion = db.query(Peticion).filter(Peticion.id_peticion == id_peticion).first()
+    if not peticion:
+        raise HTTPException(status_code=404, detail="Petición no encontrada.")
+
+    peticion.etiqueta = nueva_etiqueta
+    db.commit()
+    db.refresh(peticion)
+
+    return {
+        "id_peticion": peticion.id_peticion,
+        "etiqueta": peticion.etiqueta,
+        "estado": peticion.estado,
+    }
 
 
 @router.get("/usuario/{id_usuario}")

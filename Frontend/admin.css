@@ -416,10 +416,10 @@ button, input, select { font: inherit; }
 
 /* Modal */
 .modal-backdrop {
+  display: none;
   position: fixed;
   inset: 0;
   background: rgba(6, 59, 46, .52);
-  display: grid;
   place-items: center;
   padding: 16px;
   z-index: 30;
@@ -505,4 +505,40 @@ button, input, select { font: inherit; }
 .btn-danger-sm:hover {
   background: #C94A41;
   color: #FFFFFF;
+}
+.petition-detail-content {
+  display: grid;
+  gap: 10px;
+}
+.detail-imagen-wrap {
+  margin: 6px 0;
+  border: 1px solid var(--border-color, #DCE4DC);
+  border-radius: 12px;
+  padding: 10px;
+  background: #F8FBF8;
+  text-align: center;
+}
+.detail-imagen-wrap img {
+  max-width: 100%;
+  max-height: 280px;
+  border-radius: 8px;
+  object-fit: contain;
+}
+.reclassify-box {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color, #DCE4DC);
+}
+.reclassify-box select {
+  padding: 9px 11px;
+  border-radius: 8px;
+  border: 1px solid #C8D4C9;
+}
+[data-ver-peticion] {
+  cursor: pointer;
+}
+.modal-backdrop.is-open {
+  display: grid;
 }

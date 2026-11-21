@@ -151,6 +151,35 @@
     </div>
   </div>
 
+  <div class="modal-backdrop" id="petition-detail-modal" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="petition-detail-title">
+      <div class="modal-header">
+        <h2 id="petition-detail-title">Detalle de petición</h2>
+        <button class="icon-btn" id="close-petition-detail-btn" type="button" aria-label="Cerrar">✕</button>
+      </div>
+
+      <div id="petition-detail-body" class="petition-detail-content">
+        <p><strong>Etiqueta actual:</strong> <span id="detail-etiqueta-badge"></span></p>
+        <p><strong>Dirección:</strong> <span id="detail-direccion"></span></p>
+        <p><strong>Estado:</strong> <span id="detail-estado"></span></p>
+
+        <div id="detail-imagen-wrap" class="detail-imagen-wrap">
+          <img id="detail-imagen-img" src="" alt="Evidencia de la petición" hidden>
+          <p id="detail-sin-imagen" class="muted-text" hidden>Esta petición no tiene imagen adjunta.</p>
+        </div>
+
+        <div class="reclassify-box">
+          <label for="detail-nueva-etiqueta">Reclasificar etiqueta (corregir error del usuario)</label>
+          <select id="detail-nueva-etiqueta">
+            <option value="organico">Orgánico (organico)</option>
+            <option value="reciclable">Reciclable (reciclable)</option>
+          </select>
+          <button class="btn-primary" id="save-reclassify-btn" type="button">Guardar reclasificación</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script src="admin.js"></script>
 </body>
