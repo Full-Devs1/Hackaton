@@ -118,15 +118,11 @@ $('register-form').addEventListener('submit', async (event) => {
   event.preventDefault();
   const name = $('reg-name').value.trim();
   const email = $('reg-email').value.trim();
-  const phone = $('reg-phone').value.trim();
-  const profile = $('reg-profile').value;
   const password = $('reg-password').value;
   const confirm = $('reg-confirm').value;
 
   let valid = setError('reg-name', name.length >= 3 ? '' : 'Escribe tu nombre completo.');
   valid = setError('reg-email', emailIsValid(email) ? '' : 'Escribe un correo electrónico válido.') && valid;
-  valid = setError('reg-phone', phone.replace(/\D/g, '').length >= 7 ? '' : 'Escribe un número de celular válido.') && valid;
-  valid = setError('reg-profile', profile ? '' : 'Selecciona cómo participas en la comunidad.') && valid;
   valid = setError('reg-password', password.length >= 8 ? '' : 'La contraseña debe tener al menos 8 caracteres.') && valid;
   valid = setError('reg-confirm', confirm && confirm === password ? '' : 'Las contraseñas no coinciden.') && valid;
   $('terms-error').textContent = $('terms').checked ? '' : 'Debes aceptar el tratamiento de datos para continuar.';
@@ -137,8 +133,6 @@ $('register-form').addEventListener('submit', async (event) => {
     const data = await enviarAuth('/api/auth/register', {
       nombre: name,
       email,
-      telefono: phone,
-      perfil: profile,
       password,
     });
     guardarSesion({ ...data, tipo_acceso: 'usuario' });
