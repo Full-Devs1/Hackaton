@@ -189,6 +189,67 @@ async function subirImagenASupabase(file) {
   return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET_NAME}/${nombreArchivo}`;
 }
 
+async function abrirModalRecolectores() {
+  const modal = document.getElementById("ecoContactoModal");
+  const bodyEl = document.getElementById("ecoContactoBody");
+  if (!modal || !bodyEl) return;
+
+  modal.classList.add("open");
+  bodyEl.innerHTML = "<p>Cargando recolectores...</p>";
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/peticiones/recolectores`);
+    const data = await res.json().catch(() => ([]));
+    if (!res.ok) {
+      throw new Error(data.detail || "No se pudieron cargar los recolectores.");
+    }
+
+    const recolectores = Array.isArray(data) ? data : [];
+    if (recolectores.length === 0) {
+      bodyEl.innerHTML = "<p>No hay recolectores registrados por el momento.</p>";
+      return;
+    }
+
+    const grupos = recolectores.reduce((acc, r) => {
+      const tipo = (r.tipo || "General").trim();
+      if (!acc[tipo]) acc[tipo] = [];
+      acc[tipo].push(r);
+      return acc;
+    }, {});
+
+    bodyEl.innerHTML = Object.entries(grupos)
+      .map(([tipo, lista]) => {
+        const filas = lista
+          .map((r) => {
+            const telefonoLimpio = String(r.telefono || "").replace(/\D/g, "");
+            const mensaje = encodeURIComponent(
+              `Hola ${r.nombre}, soy de EcoConecta (Villas de San Pablo). ¿Me confirmas si hay demora en la recolección?`
+            );
+
+            const accionHtml = telefonoLimpio
+              ? `<a class="eco-wpp-btn" href="https://wa.me/${telefonoLimpio}?text=${mensaje}" target="_blank" rel="noopener noreferrer">WhatsApp</a>`
+              : `<span style="font-size:0.8rem;color:#64748b;">Sin teléfono</span>`;
+
+            return `
+              <div class="eco-recolector-fila">
+                <span class="eco-recolector-nombre">${r.nombre}</span>
+                ${accionHtml}
+              </div>
+            `;
+          })
+          .join("");
+
+        return `
+          <div class="eco-grupo-titulo">${tipo}</div>
+          ${filas}
+        `;
+      })
+      .join("");
+  } catch (err) {
+    bodyEl.innerHTML = `<p style="color:#dc2626;">${err.message}</p>`;
+  }
+}
+
 function inicializar() {
   usuarioActual = obtenerSesionUsuario();
   if (!usuarioActual) {

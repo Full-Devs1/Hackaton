@@ -124,14 +124,27 @@
   </main>
 
   <footer class="footer">
-    <div class="footer-inner">
-      <div>
-        <b>EcoConecta · Villas de San Pablo</b>
-        <p>La sostenibilidad se construye con la participación de todos.</p>
-      </div>
-      <small>Portal de usuario ciudadano<br>Comunidad sostenible</small>
+  <div class="footer-inner">
+    <div>
+      <b>EcoConecta · Villas de San Pablo</b>
+      <p>La sostenibilidad se construye con la participación de todos.</p>
     </div>
-  </footer>
+    <button type="button" id="btnContactanosFooter" class="btn-contactanos" onclick="abrirModalRecolectores()">
+      Contáctanos!
+    </button>
+    <small>Portal de usuario ciudadano<br>Comunidad sostenible</small>
+  </div>
+</footer>
+
+<div id="ecoContactoModal" class="eco-modal-backdrop" onclick="if(event.target===this) this.classList.remove('open')">
+  <div class="eco-modal-card">
+    <div class="eco-modal-header">
+      <h3>Recolectores disponibles</h3>
+      <button type="button" class="eco-close-btn" onclick="document.getElementById('ecoContactoModal').classList.remove('open')">&times;</button>
+    </div>
+    <div id="ecoContactoBody"></div>
+  </div>
+</div>
 
   <!-- Modal crear petición (alineado con peticiones + imagen.url_imagen) -->
   <div class="modal-bg" id="requestModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
@@ -194,6 +207,5 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script src="usuario.js"></script>
-  <script src="js/contacto-recolectores.js"></script>
 </body>
 </html>
