@@ -3,7 +3,7 @@
 const SUPABASE_URL = 'https://bqhucmjjhuakmwbbhdky.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_KqWrGVVJWd0lu9W7PDXoKw_1fL5D04a';
 const BUCKET_NAME = 'imagenes-peticiones';
-const API_BASE_URL = 'https://ecoconecta-backend-n4n2.onrender.comhttp://127.0.0.1:8000';
+const API_BASE_URL = 'https://ecoconecta-backend-n4n2.onrender.com';
 const STORAGE_KEY = 'ecoconecta_sesion';
 
 const $ = (id) => document.getElementById(id);
